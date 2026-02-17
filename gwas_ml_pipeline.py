@@ -37,9 +37,6 @@ try:
 except Exception:
     _HAS_LGBM = False
 
-
-# ======================
-# Logging / Shell helpers
 # ======================
 
 def info(msg: str):
@@ -114,9 +111,6 @@ def resolve_plink(plink_path: Optional[str]) -> str:
         "Also checked PATH. Provide --plink_path to set it explicitly."
     )
 
-
-# =====================
-# File/IO convenience
 # =====================
 
 def safe_mkdir(p: Path):
@@ -130,9 +124,6 @@ def read_table_safe(path: Path, **kwargs) -> pd.DataFrame:
             continue
     return pd.read_csv(path, **kwargs)
 
-
-# ==============================
-# Model Saving/Loading Functions
 # ==============================
 
 def save_models(models_dict: Dict[str, Pipeline], 
@@ -211,10 +202,8 @@ def load_model(model_path: Path) -> Pipeline:
     else:
         raise ValueError(f"Unsupported model format: {model_path.suffix}")
 
+# ==============================
 
-# ==============================
-# REALISTIC SCORE RANGES - UPDATED TO MATCH YOUR FLASK APP
-# ==============================
 PREDICTION_RANGES = {
     "CD": {
         "min": 19.0,
@@ -250,9 +239,6 @@ PREDICTION_RANGES = {
     }
 }
 
-
-# ==============================
-# CORRECTED Weight Extraction Functions
 # ==============================
 
 def extract_model_weights(pipeline, model_name, outcome):
@@ -349,7 +335,7 @@ def extract_model_weights(pipeline, model_name, outcome):
             # CRITICAL FIX: Use realistic baseline predictions matching your PREDICTION_RANGES
             # For tree models, use the midpoint of your realistic ranges
             intercept = realistic_midpoint
-            info(f"🌳 Using realistic {outcome} baseline for {model_name}: {intercept:.2f} (range: {realistic_min}-{realistic_max})")
+            info(f" Using realistic {outcome} baseline for {model_name}: {intercept:.2f} (range: {realistic_min}-{realistic_max})")
         
         # Filter for SNP features ONLY
         snp_coefficients = {}
@@ -365,7 +351,7 @@ def extract_model_weights(pipeline, model_name, outcome):
         
         # Validate intercept is within realistic range
         if intercept < expected_range[0] or intercept > expected_range[1]:
-            warn(f"⚠️ {outcome} {model_name} intercept {intercept:.2f} outside expected range {expected_range}")
+            warn(f" {outcome} {model_name} intercept {intercept:.2f} outside expected range {expected_range}")
             # Force to midpoint if still unrealistic
             intercept = realistic_midpoint
         
@@ -544,12 +530,9 @@ def export_combined_weights(models_dict: Dict[str, Pipeline],
     with open(combined_file, 'w') as f:
         json.dump(combined_data, f, indent=2)
     
-    info(f"✓ Saved PREDICTION_RANGES COMBINED weights: {combined_filename}")
+    info(f" Saved PREDICTION_RANGES COMBINED weights: {combined_filename}")
     return combined_file
 
-
-# ==============================
-# Phenotype columns & ID helpers
 # ==============================
 
 def autodetect_trait_columns(df: pd.DataFrame,
@@ -583,9 +566,6 @@ def encode_sex_from_gender(series: pd.Series) -> pd.Series:
     out[(s == 2) | (s.astype(str).str.strip() == "2")] = 2
     return out
 
-
-# =========================
-# PLINK text parsing utils
 # =========================
 
 def extract_clumped_snps(clump_file: Path) -> List[str]:
@@ -633,9 +613,6 @@ def load_plink_raw(raw_path: Path) -> pd.DataFrame:
             df.drop(columns=c, inplace=True)
     return df
 
-
-# ======================================
-# Elastic Net model
 # ======================================
 
 def compute_elastic_net_scores(df: pd.DataFrame, outcome: str, snp_columns: List[str]) -> Tuple[pd.Series, Pipeline]:
@@ -664,9 +641,6 @@ def compute_elastic_net_scores(df: pd.DataFrame, outcome: str, snp_columns: List
     
     return pd.Series(enet_scores, index=df.index, name=f"ENet_{outcome}"), enet
 
-
-# ======================================
-# ANOVA (F-test) + Mutual Information FS
 # ======================================
 
 def _select_top_features_by_anova_mi(
@@ -733,9 +707,6 @@ def _select_top_features_by_anova_mi(
 
     return list(dict.fromkeys(base_keep_cols + chosen))  # preserve order & dedupe
 
-
-# ===================
-# ML training routine
 # ===================
 
 def train_models(df: pd.DataFrame,
@@ -891,10 +862,6 @@ def train_models(df: pd.DataFrame,
     perf["TestSize"] = len(y_test)
     return perf, models_out, X_train.columns.tolist()
 
-
-
-# ============
-# Main routine
 # ============
 
 def main():
@@ -1241,16 +1208,16 @@ def main():
     predict_all(ml_rsa, "RSA", models_rsa, selected_rsa, result_dir, args.out_prefix)
 
     info("\n=== COMPLETED ===")
-    info(f"📁 Results directory: {result_dir}")
-    info(f"📊 Performance results: {out_csv.name}")
-    info(f"🤖 Full models: {result_dir / 'saved_models'}")
-    info(f"⚖️  PREDICTION_RANGES weight files: {result_dir / 'model_weights'}")
-    info(f"🎯 Realistic Score Ranges: CD={PREDICTION_RANGES['CD']['min']}-{PREDICTION_RANGES['CD']['max']}, RSA={PREDICTION_RANGES['RSA']['min']}-{PREDICTION_RANGES['RSA']['max']}")
-
+    info(f" Results directory: {result_dir}")
+    info(f" Performance results: {out_csv.name}")
+    info(f" Full models: {result_dir / 'saved_models'}")
+    info(f" PREDICTION_RANGES weight files: {result_dir / 'model_weights'}")
+    info(f" Realistic Score Ranges: CD={PREDICTION_RANGES['CD']['min']}-{PREDICTION_RANGES['CD']['max']}, RSA={PREDICTION_RANGES['RSA']['min']}-{PREDICTION_RANGES['RSA']['max']}")
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
         err(str(e))
+
         sys.exit(1)
